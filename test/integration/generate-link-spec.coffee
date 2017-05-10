@@ -19,12 +19,15 @@ describe 'Generate Link', ->
       disableLogging: true
       logFn: @logFn
       emailDomains: ['octoblu.com']
+      linkDomains: ['example.com']
       _fakeCredentials:
         uuid: 'some-uuid'
         token: 'some-token'
       _fakeSesClient: @sesClient
       sesKey: 'some-ses-key'
       sesSecret: 'some-ses-secret'
+      fromEmailAddress: 'superadmin@example.com'
+      serviceName: 'Meshblu Authenticator Test'
       meshbluConfig:
         uuid: 'some-authenticator-uuid'
         token: 'some-authenticator-token'
@@ -44,7 +47,7 @@ describe 'Generate Link', ->
     @server.destroy()
 
   describe 'On POST /links', ->
-    describe 'when called with an email', ->
+    describe 'when called with everything it needs', ->
       beforeEach (done) ->
         @sesClient.sendEmail.yields null
         options =
@@ -52,6 +55,7 @@ describe 'Generate Link', ->
           baseUrl: "http://localhost:#{@serverPort}"
           json:
             email: 'some-email@octoblu.com'
+            loginUrl: 'https://some.example.com/login'
 
         request.post options, (error, @response, @body) =>
           done error
@@ -62,10 +66,26 @@ describe 'Generate Link', ->
       it 'should send the email', ->
         expect(@sesClient.sendEmail).to.have.been.calledWith {
           to: 'some-email@octoblu.com'
-          from: 'serveradmin@octoblu.com'
-          subject: 'Login with your Magic Link'
-          message: "Here is the link you requested to login https://app.octoblu.com/api/session?uuid=some-uuid&token=some-token"
-          altText: "Here is the link you requested to login https://app.octoblu.com/api/session?uuid=some-uuid&token=some-token"
+          from: 'superadmin@example.com'
+          subject: 'Sign-in to Meshblu Authenticator Test with this magic link'
+          message: """
+            <p><strong>Hello!</strong></p>
+            <p>We've generated your <em>magic link</em> for <strong>Meshblu Authenticator Test</strong>. You can use the link below.</p>
+            <h3 id="signinlinkhttpssomeexamplecomloginuuidsomeuuidtokensometoken"><a href="https://some.example.com/login?uuid=some-uuid&token=some-token">Sign-in Link</a></h3>
+            <p>Cheers,</p>
+            <p>The Team at Octoblu</p>
+          """
+          altText: """
+            Hello!
+
+            We've generated your magic link for Meshblu Authenticator Test. You can use the link below.
+
+            https://some.example.com/login?uuid=some-uuid&token=some-token
+
+            Cheers,
+
+            The Team at Octoblu
+          """
         }
 
     describe 'when called without an email', ->
@@ -73,7 +93,22 @@ describe 'Generate Link', ->
         options =
           uri: '/links'
           baseUrl: "http://localhost:#{@serverPort}"
-          json: true
+          json:
+            loginUrl: 'https://some.example.com/login'
+
+        request.post options, (error, @response, @body) =>
+          done error
+
+      it 'should return a 422', ->
+        expect(@response.statusCode).to.equal 422
+
+    describe 'when called without a loginUrl', ->
+      beforeEach (done) ->
+        options =
+          uri: '/links'
+          baseUrl: "http://localhost:#{@serverPort}"
+          json:
+            email: 'some-email@octoblu.com'
 
         request.post options, (error, @response, @body) =>
           done error
@@ -87,7 +122,23 @@ describe 'Generate Link', ->
           uri: '/links'
           baseUrl: "http://localhost:#{@serverPort}"
           json:
+            loginUrl: 'https://some.example.com/login'
             email: 'some-email@invalid.com'
+
+        request.post options, (error, @response, @body) =>
+          done error
+
+      it 'should return a 403', ->
+        expect(@response.statusCode).to.equal 403
+
+    describe 'when called with an invalid loginUrl', ->
+      beforeEach (done) ->
+        options =
+          uri: '/links'
+          baseUrl: "http://localhost:#{@serverPort}"
+          json:
+            loginUrl: 'https://some.invalid.com/login'
+            email: 'some-email@octoblu.com'
 
         request.post options, (error, @response, @body) =>
           done error

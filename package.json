@@ -50,6 +50,7 @@
     "moment": "^2.18.1",
     "node-ses": "^2.0.5",
     "server-destroy": "^1.0.1",
+    "showdown": "^1.6.4",
     "sigterm-handler": "^2.0.0"
   },
   "license": "MIT",

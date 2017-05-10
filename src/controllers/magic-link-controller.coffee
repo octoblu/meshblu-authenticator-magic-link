@@ -3,8 +3,8 @@ class MagicLinkController
     throw new Error 'MagicLinkController magicLinkService' unless @magicLinkService?
 
   generateLink: (request, response) =>
-    { email } = request.body
-    @magicLinkService.generateLink { email }, (error) =>
+    { email, loginUrl } = request.body
+    @magicLinkService.generateLink { email, loginUrl }, (error) =>
       return response.sendError(error) if error?
       response.sendStatus(204)
 

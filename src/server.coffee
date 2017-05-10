@@ -1,16 +1,21 @@
 enableDestroy      = require 'server-destroy'
 octobluExpress     = require 'express-octoblu'
 Router             = require './router'
-MagicLinkService = require './services/magic-link-service'
+MagicLinkService   = require './services/magic-link-service'
+EmailService       = require './services/email-service'
 
 class Server
   constructor: (options) ->
     { @logFn, @disableLogging, @port } = options
-    { @meshbluConfig, @emailDomains } = options
-    { @sesKey, @sesSecret } = options
+    { @meshbluConfig, @emailDomains, @linkDomains } = options
+    { @serviceName, @fromEmailAddress } = options
+    { @sesKey, @sesSecret, @sesEmailUrl } = options
     { @_fakeCredentials, @_fakeSesClient } = options
     throw new Error 'Server: requires meshbluConfig' unless @meshbluConfig?
     throw new Error 'Server: requires emailDomains' unless @emailDomains?
+    throw new Error 'Server: requires linkDomains' unless @linkDomains?
+    throw new Error 'Server: requires serviceName' unless @serviceName?
+    throw new Error 'Server: requires fromEmailAddress' unless @fromEmailAddress?
     throw new Error 'Server: requires sesKey' unless @sesKey?
     throw new Error 'Server: requires sesSecret' unless @sesSecret?
 
@@ -19,14 +24,20 @@ class Server
 
   run: (callback) =>
     app = octobluExpress({ @logFn, @disableLogging })
-
-    magicLinkService = new MagicLinkService {
-      @meshbluConfig
+    emailService = new EmailService {
       @emailDomains
-      @_fakeCredentials
-      @_fakeSesClient
+      @linkDomains
+      @serviceName
+      @fromEmailAddress
+      @sesEmailUrl
       @sesKey
       @sesSecret
+      @_fakeSesClient
+    }
+    magicLinkService = new MagicLinkService {
+      emailService
+      @meshbluConfig
+      @_fakeCredentials
     }
     router = new Router { @meshbluConfig, magicLinkService }
 
