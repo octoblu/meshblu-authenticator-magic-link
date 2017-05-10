@@ -7,8 +7,12 @@ class Server
   constructor: (options) ->
     { @logFn, @disableLogging, @port } = options
     { @meshbluConfig, @emailDomains } = options
+    { @sesKey, @sesSecret } = options
+    { @_fakeCredentials } = options
     throw new Error 'Server: requires meshbluConfig' unless @meshbluConfig?
     throw new Error 'Server: requires emailDomains' unless @emailDomains?
+    throw new Error 'Server: requires sesKey' unless @sesKey?
+    throw new Error 'Server: requires sesSecret' unless @sesSecret?
 
   address: =>
     @server.address()
@@ -16,8 +20,14 @@ class Server
   run: (callback) =>
     app = octobluExpress({ @logFn, @disableLogging })
 
-    magicLinkService = new MagicLinkService { @emailDomains }
-    router = new Router {@meshbluConfig, magicLinkService}
+    magicLinkService = new MagicLinkService {
+      @meshbluConfig
+      @emailDomains
+      @_fakeCredentials
+      @sesKey
+      @sesSecret
+    }
+    router = new Router { @meshbluConfig, magicLinkService }
 
     router.route app
 

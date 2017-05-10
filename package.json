@@ -42,8 +42,12 @@
     "debug": "^2.2.0",
     "envalid": "^2.4.2",
     "express-octoblu": "^3.0.0",
-    "lodash": "^4.15.0",
+    "isemail": "^2.2.1",
+    "lodash": "^4.17.4",
+    "meshblu-authenticator-core": "^4.1.1",
     "meshblu-config": "^6.0.0",
+    "meshblu-http": "^9.9.0",
+    "moment": "^2.18.1",
     "server-destroy": "^1.0.1",
     "sigterm-handler": "^2.0.0"
   },

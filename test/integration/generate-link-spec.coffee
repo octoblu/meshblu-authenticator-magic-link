@@ -16,8 +16,15 @@ describe 'Generate Link', ->
       port: undefined,
       disableLogging: true
       logFn: @logFn
-      emailDomains: ['example.com']
+      emailDomains: ['octoblu.com']
+      _fakeCredentials:
+        uuid: 'some-uuid'
+        token: 'some-token'
+      sesKey: 'some-ses-key'
+      sesSecret: 'some-ses-secret'
       meshbluConfig:
+        uuid: 'some-authenticator-uuid'
+        token: 'some-authenticator-token'
         hostname: 'localhost'
         protocol: 'http'
         resolveSrv: false
@@ -60,3 +67,17 @@ describe 'Generate Link', ->
 
       it 'should return a 422', ->
         expect(@response.statusCode).to.equal 422
+
+    describe 'when called with an invalid email', ->
+      beforeEach (done) ->
+        options =
+          uri: '/links'
+          baseUrl: "http://localhost:#{@serverPort}"
+          json:
+            email: 'some-email@invalid.com'
+
+        request.post options, (error, @response, @body) =>
+          done error
+
+      it 'should return a 403', ->
+        expect(@response.statusCode).to.equal 403

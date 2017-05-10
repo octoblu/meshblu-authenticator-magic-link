@@ -12,7 +12,9 @@ strListValidator = envalid.makeValidator (value) =>
 
 envConfig = {
   PORT: envalid.num({ default: 80, devDefault: 3000 })
-  EMAIL_DOMAINS: strListValidator { desc:  'comma-seperated list of whitelisted domains' }
+  EMAIL_DOMAINS: strListValidator { desc: 'comma-seperated list of whitelisted domains' }
+  SES_KEY: envalid.str({ desc: 'AWS Access Key for SES' })
+  SES_SECERT: envalid.str({ desc: 'AWS Secret Key for SES' })
 }
 
 class Command
@@ -22,6 +24,8 @@ class Command
       meshbluConfig : new MeshbluConfig().toJSON()
       port          : env.PORT
       emailDomains  : env.EMAIL_DOMAINS
+      sesKey        : env.SES_KEY
+      sesSecret     : env.SES_SECERT
     }
 
   panic: (error) =>
