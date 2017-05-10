@@ -12,6 +12,8 @@ describe 'Generate Link', ->
     enableDestroy @meshblu
 
     @logFn = sinon.spy()
+    @sesClient =
+      sendEmail: sinon.stub()
     serverOptions =
       port: undefined,
       disableLogging: true
@@ -20,6 +22,7 @@ describe 'Generate Link', ->
       _fakeCredentials:
         uuid: 'some-uuid'
         token: 'some-token'
+      _fakeSesClient: @sesClient
       sesKey: 'some-ses-key'
       sesSecret: 'some-ses-secret'
       meshbluConfig:
@@ -43,6 +46,7 @@ describe 'Generate Link', ->
   describe 'On POST /links', ->
     describe 'when called with an email', ->
       beforeEach (done) ->
+        @sesClient.sendEmail.yields null
         options =
           uri: '/links'
           baseUrl: "http://localhost:#{@serverPort}"
@@ -52,8 +56,17 @@ describe 'Generate Link', ->
         request.post options, (error, @response, @body) =>
           done error
 
-      it 'should return a 200', ->
-        expect(@response.statusCode).to.equal 200
+      it 'should return a 204', ->
+        expect(@response.statusCode).to.equal 204
+
+      it 'should send the email', ->
+        expect(@sesClient.sendEmail).to.have.been.calledWith {
+          to: 'some-email@octoblu.com'
+          from: 'serveradmin@octoblu.com'
+          subject: 'Login with your Magic Link'
+          message: "Here is the link you requested to login https://app.octoblu.com/api/session?uuid=some-uuid&token=some-token"
+          altText: "Here is the link you requested to login https://app.octoblu.com/api/session?uuid=some-uuid&token=some-token"
+        }
 
     describe 'when called without an email', ->
       beforeEach (done) ->

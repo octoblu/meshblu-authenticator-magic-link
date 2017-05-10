@@ -14,7 +14,7 @@ envConfig = {
   PORT: envalid.num({ default: 80, devDefault: 3000 })
   EMAIL_DOMAINS: strListValidator { desc: 'comma-seperated list of whitelisted domains' }
   SES_KEY: envalid.str({ desc: 'AWS Access Key for SES' })
-  SES_SECERT: envalid.str({ desc: 'AWS Secret Key for SES' })
+  SES_SECRET: envalid.str({ desc: 'AWS Secret Key for SES' })
 }
 
 class Command
@@ -25,7 +25,7 @@ class Command
       port          : env.PORT
       emailDomains  : env.EMAIL_DOMAINS
       sesKey        : env.SES_KEY
-      sesSecret     : env.SES_SECERT
+      sesSecret     : env.SES_SECRET
     }
 
   panic: (error) =>

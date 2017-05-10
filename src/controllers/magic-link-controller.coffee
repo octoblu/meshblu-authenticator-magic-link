@@ -4,8 +4,8 @@ class MagicLinkController
 
   generateLink: (request, response) =>
     { email } = request.body
-    @magicLinkService.generateLink { email }, (error, result) =>
+    @magicLinkService.generateLink { email }, (error) =>
       return response.sendError(error) if error?
-      response.status(200).send(result)
+      response.sendStatus(204)
 
 module.exports = MagicLinkController

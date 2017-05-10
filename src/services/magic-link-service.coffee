@@ -1,20 +1,22 @@
 _                     = require 'lodash'
 moment                = require 'moment'
 isEmail               = require 'isemail'
+ses                   = require 'node-ses'
 MeshbluHttp           = require 'meshblu-http'
 {DeviceAuthenticator} = require 'meshblu-authenticator-core'
 debug                 = require('debug')('meshblu-authenticator-magic-link:magic-link-service')
 DEFAULT_PASSWORD      = 'idk-man-doesnt-matter'
 
 class MagicLinkService
-  constructor: ({ @emailDomains, meshbluConfig, @sesKey, @sesSecret, @_fakeCredentials }) ->
+  constructor: ({ @emailDomains, meshbluConfig, sesKey, sesSecret, @_fakeCredentials, @_fakeSesClient }) ->
     throw new Error 'MagicLinkService: requires emailDomains' unless @emailDomains?
     throw new Error 'MagicLinkService: requires meshbluConfig' unless meshbluConfig?
-    throw new Error 'MagicLinkService: requires sesKey' unless @sesKey?
-    throw new Error 'MagicLinkService: requires sesSecret' unless @sesSecret?
+    throw new Error 'MagicLinkService: requires sesKey' unless sesKey?
+    throw new Error 'MagicLinkService: requires sesSecret' unless sesSecret?
     @authenticatorName = 'Magic Link Authenticator'
     @authenticatorUuid = meshbluConfig.uuid
     throw new Error 'MagicLinkService: requires an authenticator uuid' unless @authenticatorUuid?
+    @sesClient = @_fakeSesClient ? ses.createClient { key: sesKey, secret: sesSecret, amazon: 'https://email.us-west-2.amazonaws.com' }
     @meshbluHttp = new MeshbluHttp meshbluConfig
     @meshbluHttp.setPrivateKey meshbluConfig.privateKey
     @deviceModel = new DeviceAuthenticator {
@@ -27,7 +29,10 @@ class MagicLinkService
     return callback @_createError 'Missing email', 422 unless email?
     @_validateRequest { email }, (error) =>
       return callback error if error?
-      @generateCredentials { email }, callback
+      @generateCredentials { email }, (error, result) =>
+        return callback error if error?
+        { uuid, token } = result
+        @_sendEmail { email, uuid, token }, callback
 
   generateCredentials: ({ email }, callback) =>
     return callback @_createError 'Missing email', 422 unless email?
@@ -75,6 +80,18 @@ class MagicLinkService
   _generateToken: ({ uuid }, callback) =>
     debug 'generate token', uuid
     @meshbluHttp.generateAndStoreToken uuid, callback
+
+  _sendEmail: ({ email, uuid, token }, callback) =>
+    @sesClient.sendEmail {
+      to: email
+      from: 'serveradmin@octoblu.com'
+      subject: 'Login with your Magic Link'
+      message: "Here is the link you requested to login https://app.octoblu.com/api/session?uuid=#{uuid}&token=#{token}"
+      altText: "Here is the link you requested to login https://app.octoblu.com/api/session?uuid=#{uuid}&token=#{token}"
+    }, (error, data, result) =>
+      debug 'sendEmail result', { error, data, result }
+      return callback error if error?
+      callback null
 
   _updateDevice: ({ uuid, email }, callback) =>
     searchId = @_generateSearchId { email }

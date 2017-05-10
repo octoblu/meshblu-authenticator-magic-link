@@ -8,7 +8,7 @@ class Server
     { @logFn, @disableLogging, @port } = options
     { @meshbluConfig, @emailDomains } = options
     { @sesKey, @sesSecret } = options
-    { @_fakeCredentials } = options
+    { @_fakeCredentials, @_fakeSesClient } = options
     throw new Error 'Server: requires meshbluConfig' unless @meshbluConfig?
     throw new Error 'Server: requires emailDomains' unless @emailDomains?
     throw new Error 'Server: requires sesKey' unless @sesKey?
@@ -24,6 +24,7 @@ class Server
       @meshbluConfig
       @emailDomains
       @_fakeCredentials
+      @_fakeSesClient
       @sesKey
       @sesSecret
     }
