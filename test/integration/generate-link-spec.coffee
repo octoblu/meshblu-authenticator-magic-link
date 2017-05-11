@@ -64,29 +64,7 @@ describe 'Generate Link', ->
         expect(@response.statusCode).to.equal 204
 
       it 'should send the email', ->
-        expect(@sesClient.sendEmail).to.have.been.calledWith {
-          to: 'some-email@octoblu.com'
-          from: 'superadmin@example.com'
-          subject: 'Sign-in to Meshblu Authenticator Test with this magic link'
-          message: """
-            <p><strong>Hello!</strong></p>
-            <p>We've generated your <em>magic link</em> for <strong>Meshblu Authenticator Test</strong>. You can use the link below.</p>
-            <h3 id="signinlinkhttpssomeexamplecomloginuuidsomeuuidtokensometoken"><a href="https://some.example.com/login?uuid=some-uuid&token=some-token">Sign-in Link</a></h3>
-            <p>Cheers,</p>
-            <p>The Team at Octoblu</p>
-          """
-          altText: """
-            Hello!
-
-            We've generated your magic link for Meshblu Authenticator Test. You can use the link below.
-
-            https://some.example.com/login?uuid=some-uuid&token=some-token
-
-            Cheers,
-
-            The Team at Octoblu
-          """
-        }
+        expect(@sesClient.sendEmail).to.have.been.called
 
     describe 'when called without an email', ->
       beforeEach (done) ->

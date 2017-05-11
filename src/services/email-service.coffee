@@ -1,9 +1,9 @@
-_        = require 'lodash'
-url      = require 'url'
-showdown = require 'showdown'
-isEmail  = require 'isemail'
-ses      = require 'node-ses'
-debug    = require('debug')('meshblu-authenticator-magic-link:email-service')
+_              = require 'lodash'
+url            = require 'url'
+isEmail        = require 'isemail'
+ses            = require 'node-ses'
+generateEmail  = require '../components/link-email'
+debug          = require('debug')('meshblu-authenticator-magic-link:email-service')
 
 class EmailService
   constructor: (options) ->
@@ -24,8 +24,8 @@ class EmailService
     throw new Error 'EmailService: requires sesSecret' unless sesSecret?
     throw new Error 'EmailService: requires linkDomains' unless @linkDomains?
     throw new Error 'EmailService: requires fromEmailAddress' unless @fromEmailAddress?
-    @converter = new showdown.Converter()
     sesEmailUrl ?= 'https://email.us-west-2.amazonaws.com'
+
     @sesClient = _fakeSesClient ? ses.createClient { key: sesKey, secret: sesSecret, amazon: sesEmailUrl  }
 
   getEmailDomain: ({ email }) =>
@@ -44,44 +44,13 @@ class EmailService
   getSubject: =>
     return "Sign-in to #{@serviceName} with this magic link"
 
-  getHtml: ({ uuid, token, loginUrl }) =>
-    return """
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <title>#{@getSubject()}</title>
-        <style type="text/css">
-          body {margin: 0; padding: 0; min-width: 100%!important;}
-        </style>
-      </head>
-      <body>
-        <h3>Hello!</h3>
-
-        As you've requested, we've generated you a <i>magic link</i> for <strong>#{@serviceName}</strong>.
-
-        <h3>Click the <a href="#{@getMagicLink({ uuid, token, loginUrl })}" title="Magic Link">Magic Link</a> to sign-in.</h3>
-
-        <span style="color: gray">
-          You may copy/paste this link into your browser
-          <br>
-          #{@getMagicLink({ uuid, token, loginUrl })}
-        </span>
-
-        Cheers,
-
-        The Team at <strong>Octoblu</strong>
-      </body>
-    </html>
-    """
-
-  getText: ({ uuid, token, loginUrl }) =>
+  getText: ({ magicLink, serviceName }) =>
     return """
       Hello!
 
-      As you've requested, we've generated you a *magic link* for **#{@serviceName}**.
+      As you've requested, we've generated you a *magic link* for #{serviceName}.
 
-      You may copy/paste this link into your browser. #{@getMagicLink({ uuid, token, loginUrl })}
+      You may copy/paste this link into your browser. #{magicLink}
 
       Cheers,
 
@@ -90,12 +59,16 @@ class EmailService
 
   send: ({ uuid, token, email, loginUrl }, callback) =>
     email = @getEmail { email }
+    magicLink = @getMagicLink { uuid, token, loginUrl }
+    subject   = @getSubject()
+    message   = generateEmail { email, magicLink, subject, @serviceName, @fromEmailAddress }
+    altText   = @getText { magicLink, @serviceName }
     @sesClient.sendEmail {
       to: email
       from: @fromEmailAddress
-      subject: @getSubject()
-      message: @getHtml({ uuid, token, loginUrl })
-      altText: @getText({ uuid, token, loginUrl })
+      subject,
+      message,
+      altText,
     }, (error) =>
       debug 'send email result', { error }
       return callback error if error?
